@@ -10,7 +10,7 @@ typedef struct {
     Token *current_token;
     Token *peek_token; // Lookahead token
     
-} Parser; // <-- THIS IS THE DEFINITION IT IS MISSING
+} Parser; // <-- THIS IS THE DEFINITION
 
 // --- Parser Core Functions ---
 

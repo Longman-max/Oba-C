@@ -1,22 +1,27 @@
 #include <stdio.h>
-#include "lexer.h"    // <-- Defines Lexer
-#include "token.h"    // <-- Defines Token
-#include "parser.h"   // <-- Defines Parser
-#include "ast.h"      // <-- Defines ASTNode
+#include <stdlib.h>
+#include "lexer.h"
+#include "token.h"
+#include "parser.h" // <-- THIS LINE FIXES THE ERROR
+#include "ast.h"
+#include "symtab.h" 
+#include "vm.h"     
 
 // Test source code for Oba-C
 const char *test_source = 
-    "int my_var; \n"
-    "int another_var; \n"
-    "my_var = (10 + 2) * 5; \n"
-    "if (my_var > 50) print(my_var); \n";
+    "int my_score; \n"
+    "int base_level_power; \n"
+    "base_level_power = 100; \n"
+    "my_score = (base_level_power + 20) * 3; \n"
+    "if (my_score > 350) print(my_score); \n"
+    "if (my_score < 350) print(base_level_power); \n"
+    "my_score = my_score / 2; \n"
+    "print(my_score); \n";
 
-// --- New AST Printing Function (for testing) ---
-
+// --- AST Printing Function (for debugging) ---
 void ast_print(ASTNode *node, int indent) {
     if (!node) return;
 
-    // Print indentation
     for (int i = 0; i < indent; i++) printf("  ");
 
     switch (node->type) {
@@ -60,28 +65,54 @@ void ast_print(ASTNode *node, int indent) {
     }
 }
 
+// --- Semantic Analysis Pass (Symbol Registration) ---
+// Walks the AST to register all declarations in the Symbol Table
+static void register_symbols(ASTNode *program, SymbolTable *st) {
+    if (program->type != NODE_PROGRAM) return;
+
+    printf("\n--- Semantic Pass: Registering Symbols ---\n");
+
+    for (int i = 0; i < program->statement_count; i++) {
+        ASTNode *stmt = program->statements[i];
+        if (stmt->type == STMT_VAR_DECL) {
+            int index = symtab_insert(st, stmt->name);
+            printf("[SYMBOL] Variable '%s' registered at memory index %d\n", stmt->name, index);
+        }
+    }
+}
+
 
 int main() {
-    printf("--- Running Oba-C Parser ---\n");
-    printf("Source Code:\n%s\n", test_source);
+    printf("--- Oba-C Compiler: Front-End ---\n");
 
     // 1. Lexer
     Lexer *l = lexer_create(test_source);
     
     // 2. Parser
-    Parser *p = parser_create(l);
+    Parser *p = parser_create(l); // This line needs "parser.h"
     ASTNode *program = parse_program(p);
 
-    // 3. Print AST
-    printf("\n--- Abstract Syntax Tree (AST) ---\n");
-    if (program) {
-        ast_print(program, 0);
-    } else {
-        printf("Parsing failed.\n");
+    if (!program) {
+        fprintf(stderr, "Compilation failed during parsing.\n");
+        return 1;
     }
+    
+    // 3. Print AST (for debugging)
+    printf("\n--- Abstract Syntax Tree (AST) ---\n");
+    ast_print(program, 0);
 
-    // 4. Cleanup
+    // 4. Semantic Pass (Symbol Table creation)
+    SymbolTable *st = symtab_create();
+    register_symbols(program, st);
+    
+    // 5. Code Generation / Execution
+    VirtualMachine *vm = vm_create(st);
+    vm_execute_program(vm, program); // Run the program
+    
+    // 6. Cleanup
     ast_node_free(program);
+    vm_destroy(vm);
+    symtab_destroy(st);
     parser_destroy(p);
     lexer_destroy(l); 
    
