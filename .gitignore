@@ -9,8 +9,6 @@ oba_c.exe
 *.so
 *.dll
 
-.vscode/
-
 build/
 bin/
 
