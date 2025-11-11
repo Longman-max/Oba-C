@@ -1,0 +1,21 @@
+.vscode/
+
+oba_c
+oba_c.exe
+
+*.o
+*.obj
+
+*.a
+*.lib
+*.so
+*.dll
+
+.vscode/
+
+build/
+bin/
+
+.DS_Store       # macOS
+Thumbs.db       # Windows
+*~              # Temporary files created by many editors (like Vim)
